@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package agent;
+
+// 添加 go_package 选项
+option go_package = "module/proto;agent";
+
+service ResourceChecker {
+  rpc CheckResources(ResourceRequest) returns (ResourceResponse);
+}
+
+message ResourceRequest {
+  string token = 1; // 鉴权 TOKEN
+}
+
+message ResourceResponse {
+  string hostname = 1;
+  string os = 2;
+  string kernel_version = 3;
+  double cpu_usage = 4;
+  double memory_usage = 5;
+  double swap_usage = 6;
+  string disk_usage = 7;
+  double load_average = 8;
+  bool webshell_supported = 9;
+}
