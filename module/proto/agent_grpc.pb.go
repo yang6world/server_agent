@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ResourceChecker_CheckResources_FullMethodName = "/agent.ResourceChecker/CheckResources"
+	ResourceChecker_RunShell_FullMethodName       = "/agent.ResourceChecker/RunShell"
 )
 
 // ResourceCheckerClient is the client API for ResourceChecker service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ResourceCheckerClient interface {
 	CheckResources(ctx context.Context, in *ResourceRequest, opts ...grpc.CallOption) (*ResourceResponse, error)
+	RunShell(ctx context.Context, in *ShellRequest, opts ...grpc.CallOption) (*ShellResponse, error)
 }
 
 type resourceCheckerClient struct {
@@ -47,11 +49,22 @@ func (c *resourceCheckerClient) CheckResources(ctx context.Context, in *Resource
 	return out, nil
 }
 
+func (c *resourceCheckerClient) RunShell(ctx context.Context, in *ShellRequest, opts ...grpc.CallOption) (*ShellResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ShellResponse)
+	err := c.cc.Invoke(ctx, ResourceChecker_RunShell_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceCheckerServer is the server API for ResourceChecker service.
 // All implementations must embed UnimplementedResourceCheckerServer
 // for forward compatibility.
 type ResourceCheckerServer interface {
 	CheckResources(context.Context, *ResourceRequest) (*ResourceResponse, error)
+	RunShell(context.Context, *ShellRequest) (*ShellResponse, error)
 	mustEmbedUnimplementedResourceCheckerServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedResourceCheckerServer struct{}
 
 func (UnimplementedResourceCheckerServer) CheckResources(context.Context, *ResourceRequest) (*ResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckResources not implemented")
+}
+func (UnimplementedResourceCheckerServer) RunShell(context.Context, *ShellRequest) (*ShellResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunShell not implemented")
 }
 func (UnimplementedResourceCheckerServer) mustEmbedUnimplementedResourceCheckerServer() {}
 func (UnimplementedResourceCheckerServer) testEmbeddedByValue()                         {}
@@ -104,6 +120,24 @@ func _ResourceChecker_CheckResources_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceChecker_RunShell_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShellRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceCheckerServer).RunShell(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceChecker_RunShell_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceCheckerServer).RunShell(ctx, req.(*ShellRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResourceChecker_ServiceDesc is the grpc.ServiceDesc for ResourceChecker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var ResourceChecker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckResources",
 			Handler:    _ResourceChecker_CheckResources_Handler,
+		},
+		{
+			MethodName: "RunShell",
+			Handler:    _ResourceChecker_RunShell_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
