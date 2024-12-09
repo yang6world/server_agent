@@ -35,7 +35,7 @@ func main() {
 
 	client := pb.NewResourceCheckerClient(conn)
 
-	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "my-secure-token")
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "1234567")
 	res, err := client.CheckResources(ctx, &pb.ResourceRequest{})
 	if err != nil {
 		log.Fatalf("failed to fetch resources: %v", err)

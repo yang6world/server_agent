@@ -3,14 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"google.golang.org/grpc/metadata"
 )
 
-const validToken = "my-secure-token"
-
 // AuthInterceptor checks the token in the gRPC metadata.
 func AuthInterceptor(ctx context.Context) error {
+	validToken := os.Getenv("AUTH_TOKEN")
+	if validToken == "" {
+		return fmt.Errorf("missing environment variable: AUTH_TOKEN")
+	}
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return fmt.Errorf("missing metadata")

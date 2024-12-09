@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"time"
 
@@ -84,6 +85,10 @@ func (s *ResourceCheckerServer) RunShell(ctx context.Context, req *pb.ShellReque
 }
 
 func main() {
+	//检查环境变量
+	if os.Getenv("AUTH_TOKEN") == "" {
+		log.Fatalf("缺少环境变量: AUTH_TOKEN")
+	}
 	// 加载 TLS 配置
 	cert, err := tls.LoadX509KeyPair("server.crt", "server.key")
 	if err != nil {
