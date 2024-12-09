@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os/exec"
 	"time"
 
 	pb "server_agent/module/proto" // 替换为实际 proto 包路径
@@ -56,6 +57,8 @@ func (s *ResourceCheckerServer) CheckResources(ctx context.Context, req *pb.Reso
 		WebshellSupported: data["webshell_supported"].(bool),
 		StartTime:         serverStartTime.String(),
 		IpAddresses:       ipAddresses,
+		NetUploadSpeed:    data["net_upload_speed"].(float64),
+		NetDownloadSpeed:  data["net_download_speed"].(float64),
 		DockerAvailable:   dockerAvailable,
 		Containers:        containers,
 	}, nil
@@ -66,11 +69,14 @@ func (s *ResourceCheckerServer) RunShell(ctx context.Context, req *pb.ShellReque
 	if err := AuthInterceptor(ctx); err != nil {
 		return nil, err
 	}
-	output, err := ExecuteShellCommand(req.Command)
+	cmd := exec.Command("bash", "-c", req.Command)
+	cmd.Args = []string{"bash", "-c", req.Command}
+	fmt.Printf("执行命令: %s\n", req.Command)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return &pb.ShellResponse{Output: "", Error: err.Error()}, nil
+		return &pb.ShellResponse{Output: string(output), Error: err.Error()}, nil
 	}
-	return &pb.ShellResponse{Output: output, Error: ""}, nil
+	return &pb.ShellResponse{Output: string(output)}, nil
 }
 
 func main() {

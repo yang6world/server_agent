@@ -25,8 +25,10 @@ message ResourceResponse {
   bool webshell_supported = 9;
   string start_time = 10;
   repeated string ip_addresses = 11;
-  bool docker_available = 12;
-  repeated ContainerInfo containers = 13;
+  double net_upload_speed = 12;
+  double net_download_speed = 13;
+  bool docker_available = 14;
+  repeated ContainerInfo containers = 15;
 }
 
 message ShellRequest {
@@ -44,4 +46,6 @@ message ContainerInfo {
   string name = 2;
   string image = 3;
   string status = 4;
+  string memory_usage = 5;
+  string cpu_usage = 6;
 }

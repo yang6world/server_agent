@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"strings"
 
 	pb "server_agent/module/proto" // 替换为您的 proto 文件生成的包路径
 
@@ -38,11 +41,17 @@ func main() {
 
 	// 设置上下文和鉴权 Token
 	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "my-secure-token")
-
 	// 输入需要执行的 Shell 命令
+
+	// 打印命令以进行验证
 	var command string
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("请输入需要执行的 Shell 命令: ")
-	fmt.Scanln(&command)
+	command, _ = reader.ReadString('\n') // 修改为赋值操作
+	command = strings.TrimSpace(command)
+
+	// 打印命令以进行验证
+	fmt.Printf("发送的命令: %s\n", command)
 
 	// 调用 RunShell 方法执行 Shell 命令
 	shellReq := &pb.ShellRequest{

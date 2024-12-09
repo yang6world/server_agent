@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os/exec"
@@ -15,6 +16,7 @@ import (
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
+	gopsutilNet "github.com/shirou/gopsutil/net"
 )
 
 // CheckResources 获取系统资源信息
@@ -48,6 +50,16 @@ func CheckResources() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("获取负载平均值失败: %v", err)
 	}
+	// 获取网络上传和下载速度
+	netIO, err := gopsutilNet.IOCounters(false)
+	if err != nil {
+		return nil, fmt.Errorf("获取网络 IO 计数器失败: %v", err)
+	}
+	var netUploadSpeed, netDownloadSpeed float64
+	if len(netIO) > 0 {
+		netUploadSpeed = float64(netIO[0].BytesSent) / 1024 / 1024   // 转换为 MB
+		netDownloadSpeed = float64(netIO[0].BytesRecv) / 1024 / 1024 // 转换为 MB
+	}
 
 	return map[string]interface{}{
 		"hostname":           hostInfo.Hostname,
@@ -58,6 +70,8 @@ func CheckResources() (map[string]interface{}, error) {
 		"swap_usage":         swapStat.UsedPercent,
 		"disk_usage":         fmt.Sprintf("%.2f%% of %.2f GB", diskStat.UsedPercent, float64(diskStat.Total)/1e9),
 		"load_average":       loadStat.Load1,
+		"net_upload_speed":   netUploadSpeed,
+		"net_download_speed": netDownloadSpeed,
 		"webshell_supported": checkWebShellSupport(),
 	}, nil
 }
@@ -112,14 +126,15 @@ func GetIPAddresses() ([]string, error) {
 	return ips, nil
 }
 
-// 执行 Shell 命令
-func ExecuteShellCommand(command string) (string, error) {
-	cmd := exec.Command("bash", "-c", command)
-	output, err := cmd.CombinedOutput()
-	return string(output), err
+func calculateCPUPercent(stats types.StatsJSON) float64 {
+	cpuDelta := float64(stats.CPUStats.CPUUsage.TotalUsage) - float64(stats.PreCPUStats.CPUUsage.TotalUsage)
+	systemDelta := float64(stats.CPUStats.SystemUsage) - float64(stats.PreCPUStats.SystemUsage)
+	if systemDelta > 0.0 && cpuDelta > 0.0 {
+		return (cpuDelta / systemDelta) * float64(len(stats.CPUStats.CPUUsage.PercpuUsage)) * 100.0
+	}
+	return 0.0
 }
 
-// 获取 Docker 信息
 func GetDockerInfo() ([]*pb.ContainerInfo, bool) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -134,11 +149,30 @@ func GetDockerInfo() ([]*pb.ContainerInfo, bool) {
 
 	var containerInfos []*pb.ContainerInfo
 	for _, container := range containers {
+		stats, err := cli.ContainerStatsOneShot(context.Background(), container.ID)
+		if err != nil {
+			return nil, false
+		}
+
+		var statsJSON types.StatsJSON
+		if err := json.NewDecoder(stats.Body).Decode(&statsJSON); err != nil {
+			return nil, false
+		}
+
+		var memoryUsage float64
+		if statsJSON.MemoryStats.Usage != 0 {
+			memoryUsage = float64(statsJSON.MemoryStats.Usage) / (1024 * 1024) // 转换为 MB
+		}
+
+		cpuUsage := calculateCPUPercent(statsJSON)
+
 		containerInfos = append(containerInfos, &pb.ContainerInfo{
-			Id:     container.ID[:12],
-			Name:   container.Names[0],
-			Image:  container.Image,
-			Status: container.Status,
+			Id:          container.ID[:12],
+			Name:        container.Names[0],
+			Image:       container.Image,
+			Status:      container.Status,
+			MemoryUsage: fmt.Sprintf("%.2f MB", memoryUsage),
+			CpuUsage:    fmt.Sprintf("%.2f%%", cpuUsage),
 		})
 	}
 	return containerInfos, true
