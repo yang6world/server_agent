@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
 	"os/exec"
 	pb "server_agent/module/proto"
@@ -18,6 +19,10 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	gopsutilNet "github.com/shirou/gopsutil/net"
 )
+
+func roundToTwoDecimalPlaces(value float64) float64 {
+	return math.Round(value*100) / 100
+}
 
 // CheckResources 获取系统资源信息
 func CheckResources() (map[string]interface{}, error) {
@@ -57,21 +62,21 @@ func CheckResources() (map[string]interface{}, error) {
 	}
 	var netUploadSpeed, netDownloadSpeed float64
 	if len(netIO) > 0 {
-		netUploadSpeed = float64(netIO[0].BytesSent) / 1024 / 1024   // 转换为 MB
-		netDownloadSpeed = float64(netIO[0].BytesRecv) / 1024 / 1024 // 转换为 MB
+		netUploadSpeed = float64(netIO[0].BytesSent) / 1024 / 1024 / 1024   // 转换为 GB
+		netDownloadSpeed = float64(netIO[0].BytesRecv) / 1024 / 1024 / 1024 // 转换为 GB
 	}
 
 	return map[string]interface{}{
 		"hostname":           hostInfo.Hostname,
 		"os":                 hostInfo.OS,
 		"kernel_version":     hostInfo.KernelVersion,
-		"cpu_usage":          cpuUsage,
-		"memory_usage":       memStat.UsedPercent,
-		"swap_usage":         swapStat.UsedPercent,
+		"cpu_usage":          roundToTwoDecimalPlaces(cpuUsage),
+		"memory_usage":       roundToTwoDecimalPlaces(memStat.UsedPercent),
+		"swap_usage":         roundToTwoDecimalPlaces(swapStat.UsedPercent),
 		"disk_usage":         fmt.Sprintf("%.2f%% of %.2f GB", diskStat.UsedPercent, float64(diskStat.Total)/1e9),
-		"load_average":       loadStat.Load1,
-		"net_upload_speed":   netUploadSpeed,
-		"net_download_speed": netDownloadSpeed,
+		"load_average":       roundToTwoDecimalPlaces(loadStat.Load1),
+		"net_upload_speed":   roundToTwoDecimalPlaces(netUploadSpeed),
+		"net_download_speed": roundToTwoDecimalPlaces(netDownloadSpeed),
 		"webshell_supported": checkWebShellSupport(),
 	}, nil
 }
