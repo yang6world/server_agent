@@ -7,8 +7,9 @@ import (
 	"math"
 	"net"
 	"os/exec"
-	pb "server_agent/module/proto"
 	"time"
+
+	pb "server_agent/module/proto"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -55,6 +56,7 @@ func CheckResources() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("获取负载平均值失败: %v", err)
 	}
+
 	// 获取网络上传和下载速度
 	netIO, err := gopsutilNet.IOCounters(false)
 	if err != nil {
@@ -66,18 +68,63 @@ func CheckResources() (map[string]interface{}, error) {
 		netDownloadSpeed = float64(netIO[0].BytesRecv) / 1024 / 1024 / 1024 // 转换为 GB
 	}
 
+	// 获取实时网络速度
+	netSpeed, err := getRealTimeNetSpeed()
+	if err != nil {
+		return nil, fmt.Errorf("获取实时网络速度失败: %v", err)
+	}
+
+	// 获取 CPU 核数
+	cpuCount, err := cpu.Counts(true)
+	if err != nil {
+		return nil, fmt.Errorf("获取 CPU 核数失败: %v", err)
+	}
+
+	// 获取机器工作时间（以天为单位）
+	uptime := hostInfo.Uptime / (60 * 60 * 24)
+
 	return map[string]interface{}{
-		"hostname":           hostInfo.Hostname,
-		"os":                 hostInfo.OS,
-		"kernel_version":     hostInfo.KernelVersion,
-		"cpu_usage":          roundToTwoDecimalPlaces(cpuUsage),
-		"memory_usage":       roundToTwoDecimalPlaces(memStat.UsedPercent),
-		"swap_usage":         roundToTwoDecimalPlaces(swapStat.UsedPercent),
-		"disk_usage":         fmt.Sprintf("%.2f%% of %.2f GB", diskStat.UsedPercent, float64(diskStat.Total)/1e9),
-		"load_average":       roundToTwoDecimalPlaces(loadStat.Load1),
-		"net_upload_speed":   roundToTwoDecimalPlaces(netUploadSpeed),
-		"net_download_speed": roundToTwoDecimalPlaces(netDownloadSpeed),
-		"webshell_supported": checkWebShellSupport(),
+		"hostname":            hostInfo.Hostname,
+		"os":                  hostInfo.OS,
+		"kernel_version":      hostInfo.KernelVersion,
+		"cpu_usage":           roundToTwoDecimalPlaces(cpuUsage),
+		"memory_usage":        roundToTwoDecimalPlaces(memStat.UsedPercent),
+		"swap_usage":          roundToTwoDecimalPlaces(swapStat.UsedPercent),
+		"disk_usage":          roundToTwoDecimalPlaces(diskStat.UsedPercent),
+		"disk_total":          roundToTwoDecimalPlaces(float64(diskStat.Total) / 1e9), // 转换为 GB
+		"load_average":        roundToTwoDecimalPlaces(loadStat.Load1),
+		"net_upload":          roundToTwoDecimalPlaces(netUploadSpeed),
+		"net_download":        roundToTwoDecimalPlaces(netDownloadSpeed),
+		"real_time_net_speed": netSpeed,
+		"cpu_count":           cpuCount,
+		"memory_total":        roundToTwoDecimalPlaces(float64((memStat.Total / (1024 * 1024 * 1024)))), // 转换为 GB
+		"uptime_days":         uptime,
+		"webshell_supported":  checkWebShellSupport(),
+	}, nil
+}
+
+// 获取实时网络速度
+func getRealTimeNetSpeed() (map[string]float64, error) {
+	netIO1, err := gopsutilNet.IOCounters(false)
+	if err != nil {
+		return nil, err
+	}
+	time.Sleep(1 * time.Second)
+	netIO2, err := gopsutilNet.IOCounters(false)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(netIO1) == 0 || len(netIO2) == 0 {
+		return nil, fmt.Errorf("无法获取网络 IO 数据")
+	}
+
+	uploadSpeed := float64(netIO2[0].BytesSent-netIO1[0].BytesSent) / 1024 / 1024   // 转换为 MB/s
+	downloadSpeed := float64(netIO2[0].BytesRecv-netIO1[0].BytesRecv) / 1024 / 1024 // 转换为 MB/s
+
+	return map[string]float64{
+		"upload_speed":   roundToTwoDecimalPlaces(uploadSpeed),
+		"download_speed": roundToTwoDecimalPlaces(downloadSpeed),
 	}, nil
 }
 

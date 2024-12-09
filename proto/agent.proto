@@ -20,15 +20,20 @@ message ResourceResponse {
   double cpu_usage = 4;
   double memory_usage = 5;
   double swap_usage = 6;
-  string disk_usage = 7;
-  double load_average = 8;
-  bool webshell_supported = 9;
+  double disk_usage = 7;
+  double disk_total = 8;
+  double load_average = 9;
   string start_time = 10;
   repeated string ip_addresses = 11;
-  double net_upload_speed = 12;
-  double net_download_speed = 13;
+  double net_upload = 12;
+  double net_download = 13;
   bool docker_available = 14;
   repeated ContainerInfo containers = 15;
+  map<string, double> real_time_net_speed = 16; // 新增字段
+  int32 cpu_count = 17; // 新增字段
+  double memory_total = 18; // 新增字段
+  uint64 uptime_days = 19; // 新增字段
+  bool webshell_supported = 20; // 新增字段
 }
 
 message ShellRequest {
