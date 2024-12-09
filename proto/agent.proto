@@ -32,7 +32,7 @@ message ResourceResponse {
   map<string, double> real_time_net_speed = 16; // 新增字段
   int32 cpu_count = 17; // 新增字段
   double memory_total = 18; // 新增字段
-  uint64 uptime_days = 19; // 新增字段
+  double uptime_days = 19; // 新增字段
   bool webshell_supported = 20; // 新增字段
 }
 

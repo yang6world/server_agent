@@ -81,7 +81,12 @@ func CheckResources() (map[string]interface{}, error) {
 	}
 
 	// 获取机器工作时间（以天为单位）
-	uptime := hostInfo.Uptime / (60 * 60 * 24)
+	uptime, err := host.Uptime()
+	if err != nil {
+		return nil, fmt.Errorf("获取机器工作时间失败: %v", err)
+	}
+	uptimeDays := float64(uptime) / (60 * 60 * 24)
+	fmt.Printf("uptimeDays: %v\n", uptimeDays)
 
 	return map[string]interface{}{
 		"hostname":            hostInfo.Hostname,
@@ -98,7 +103,7 @@ func CheckResources() (map[string]interface{}, error) {
 		"real_time_net_speed": netSpeed,
 		"cpu_count":           cpuCount,
 		"memory_total":        roundToTwoDecimalPlaces(float64((memStat.Total / (1024 * 1024 * 1024)))), // 转换为 GB
-		"uptime_days":         uptime,
+		"uptime_days":         roundToTwoDecimalPlaces(uptimeDays),
 		"webshell_supported":  checkWebShellSupport(),
 	}, nil
 }

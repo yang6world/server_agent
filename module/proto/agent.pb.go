@@ -88,7 +88,7 @@ type ResourceResponse struct {
 	RealTimeNetSpeed  map[string]float64 `protobuf:"bytes,16,rep,name=real_time_net_speed,json=realTimeNetSpeed,proto3" json:"real_time_net_speed,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"fixed64,2,opt,name=value,proto3"` // 新增字段
 	CpuCount          int32              `protobuf:"varint,17,opt,name=cpu_count,json=cpuCount,proto3" json:"cpu_count,omitempty"`                                                                                                                      // 新增字段
 	MemoryTotal       float64            `protobuf:"fixed64,18,opt,name=memory_total,json=memoryTotal,proto3" json:"memory_total,omitempty"`                                                                                                            // 新增字段
-	UptimeDays        uint64             `protobuf:"varint,19,opt,name=uptime_days,json=uptimeDays,proto3" json:"uptime_days,omitempty"`                                                                                                                // 新增字段
+	UptimeDays        float64            `protobuf:"fixed64,19,opt,name=uptime_days,json=uptimeDays,proto3" json:"uptime_days,omitempty"`                                                                                                               // 新增字段
 	WebshellSupported bool               `protobuf:"varint,20,opt,name=webshell_supported,json=webshellSupported,proto3" json:"webshell_supported,omitempty"`                                                                                           // 新增字段
 }
 
@@ -248,7 +248,7 @@ func (x *ResourceResponse) GetMemoryTotal() float64 {
 	return 0
 }
 
-func (x *ResourceResponse) GetUptimeDays() uint64 {
+func (x *ResourceResponse) GetUptimeDays() float64 {
 	if x != nil {
 		return x.UptimeDays
 	}
@@ -504,7 +504,7 @@ var file_proto_agent_proto_rawDesc = []byte{
 	0x65, 0x6d, 0x6f, 0x72, 0x79, 0x5f, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x18, 0x12, 0x20, 0x01, 0x28,
 	0x01, 0x52, 0x0b, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x12, 0x1f,
 	0x0a, 0x0b, 0x75, 0x70, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x13, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x0a, 0x75, 0x70, 0x74, 0x69, 0x6d, 0x65, 0x44, 0x61, 0x79, 0x73, 0x12,
+	0x01, 0x28, 0x01, 0x52, 0x0a, 0x75, 0x70, 0x74, 0x69, 0x6d, 0x65, 0x44, 0x61, 0x79, 0x73, 0x12,
 	0x2d, 0x0a, 0x12, 0x77, 0x65, 0x62, 0x73, 0x68, 0x65, 0x6c, 0x6c, 0x5f, 0x73, 0x75, 0x70, 0x70,
 	0x6f, 0x72, 0x74, 0x65, 0x64, 0x18, 0x14, 0x20, 0x01, 0x28, 0x08, 0x52, 0x11, 0x77, 0x65, 0x62,
 	0x73, 0x68, 0x65, 0x6c, 0x6c, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x1a, 0x43,

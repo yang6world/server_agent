@@ -60,7 +60,7 @@ func (s *ResourceCheckerServer) CheckResources(ctx context.Context, req *pb.Reso
 		RealTimeNetSpeed:  data["real_time_net_speed"].(map[string]float64),
 		CpuCount:          int32(data["cpu_count"].(int)),
 		MemoryTotal:       data["memory_total"].(float64),
-		UptimeDays:        data["uptime_days"].(uint64),
+		UptimeDays:        data["uptime_days"].(float64),
 		WebshellSupported: data["webshell_supported"].(bool),
 		IpAddresses:       ipAddresses,
 		DockerAvailable:   dockerAvailable,
